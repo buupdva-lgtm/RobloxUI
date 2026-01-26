@@ -1,116 +1,104 @@
---====================================================--
---  🌿 WeedHub by Pacey   (Lern-UI für eigene Spiele)
---====================================================--
+-- 🔧 Roblox Noclip Menü mit Design & Shortcut
+-- Wichtig: Nur in deinem eigenen Spiel zum Testen oder Debuggen verwenden!
 
--- UI-Objekte erstellen
-local plr = game.Players.LocalPlayer
-local ScreenGui = Instance.new("ScreenGui", plr:WaitForChild("PlayerGui"))
-ScreenGui.Name = "WeedHubUI"
-ScreenGui.ResetOnSpawn = false
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
 
-local Frame = Instance.new("Frame", ScreenGui)
-Frame.Position = UDim2.new(0.5, -150, 0.5, -120)
-Frame.Size = UDim2.new(0, 300, 0, 280)
-Frame.BackgroundColor3 = Color3.fromRGB(25,25,25)
-Frame.Active = true
-Frame.Draggable = true
+local player = Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local noclip = false
 
-local Title = Instance.new("TextLabel", Frame)
-Title.Size = UDim2.new(1, 0, 0, 30)
-Title.BackgroundColor3 = Color3.fromRGB(15,15,15)
-Title.Text = "WeedHub by Pacey"
-Title.TextColor3 = Color3.fromRGB(0,255,0)
-Title.Font = Enum.Font.SourceSansBold
-Title.TextSize = 20
+-- 🎨 GUI-Erstellung
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "NoclipMenu"
+screenGui.ResetOnSpawn = false
+screenGui.IgnoreGuiInset = true
+screenGui.Parent = player:WaitForChild("PlayerGui")
 
-local function makeButton(text, posY)
-	local b = Instance.new("TextButton", Frame)
-	b.Size = UDim2.new(0.8,0,0,30)
-	b.Position = UDim2.new(0.1,0,posY,0)
-	b.BackgroundColor3 = Color3.fromRGB(50,150,50)
-	b.TextColor3 = Color3.new(1,1,1)
-	b.Font = Enum.Font.SourceSans
-	b.TextSize = 16
-	b.Text = text
-	b.BorderSizePixel = 0
-	return b
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0, 160, 0, 70)
+frame.Position = UDim2.new(0, 20, 0, 20)
+frame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+frame.BackgroundTransparency = 0.3
+frame.BorderSizePixel = 0
+frame.Parent = screenGui
+
+local stroke = Instance.new("UIStroke")
+stroke.Thickness = 2
+stroke.Color = Color3.fromRGB(255, 255, 255)
+stroke.Parent = frame
+
+local label = Instance.new("TextLabel")
+label.Size = UDim2.new(1, 0, 0, 25)
+label.BackgroundTransparency = 1
+label.Text = "🔮 Noclip Menü"
+label.TextColor3 = Color3.new(1, 1, 1)
+label.TextScaled = true
+label.Font = Enum.Font.GothamBold
+label.Parent = frame
+
+local button = Instance.new("TextButton")
+button.Size = UDim2.new(1, -20, 0, 30)
+button.Position = UDim2.new(0, 10, 0, 35)
+button.BackgroundColor3 = Color3.fromRGB(180, 50, 50)
+button.TextColor3 = Color3.new(1, 1, 1)
+button.Font = Enum.Font.GothamBold
+button.TextScaled = true
+button.Text = "Noclip: AUS"
+button.Parent = frame
+
+local corner1 = Instance.new("UICorner", frame)
+corner1.CornerRadius = UDim.new(0, 8)
+
+local corner2 = Instance.new("UICorner", button)
+corner2.CornerRadius = UDim.new(0, 6)
+
+-- ⚙️ Funktionen
+local function setNoclip(state)
+	noclip = state
+	if noclip then
+		button.Text = "Noclip: AN"
+		button.BackgroundColor3 = Color3.fromRGB(50, 180, 50)
+	else
+		button.Text = "Noclip: AUS"
+		button.BackgroundColor3 = Color3.fromRGB(180, 50, 50)
+	end
 end
 
-local btnTeleport = makeButton("Teleport (Demo)", 0.18)
-local btnRunSpeed = makeButton("Change WalkSpeed (Demo)", 0.33)
-local btnCamera  = makeButton("Toggle Camera Mode", 0.48)
-local btnDebug   = makeButton("Show Debug Info", 0.63)
-local btnTheme   = makeButton("Toggle Dark/Light", 0.78)
+local function toggleNoclip()
+	setNoclip(not noclip)
+end
 
--------------------------------------------------------
--- Funktionen
--------------------------------------------------------
-local cam = workspace.CurrentCamera
-local dark = true
-local flyCam = false
+button.MouseButton1Click:Connect(toggleNoclip)
 
-btnTeleport.MouseButton1Click:Connect(function()
-	if plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
-		plr.Character.HumanoidRootPart.CFrame = CFrame.new(Vector3.new(0, 10, 0))
-		print("[WeedHub] Spieler testweise verschoben.")
+UserInputService.InputBegan:Connect(function(input, gpe)
+	if gpe then return end
+	if input.KeyCode == Enum.KeyCode.N then
+		toggleNoclip()
 	end
 end)
 
-btnRunSpeed.MouseButton1Click:Connect(function()
-	local hum = plr.Character and plr.Character:FindFirstChildOfClass("Humanoid")
-	if not hum then return end
-	if hum.WalkSpeed == 16 then
-		hum.WalkSpeed = 30
-		btnRunSpeed.Text = "Restore WalkSpeed"
-		print("[WeedHub] Geschwindigkeit erhöht (Demo).")
-	else
-		hum.WalkSpeed = 16
-		btnRunSpeed.Text = "Change WalkSpeed (Demo)"
-		print("[WeedHub] Geschwindigkeit normal.")
-	end
-end)
-
-btnCamera.MouseButton1Click:Connect(function()
-	if flyCam then
-		cam.CameraType = Enum.CameraType.Custom
-		flyCam = false
-		btnCamera.Text = "Toggle Camera Mode"
-		print("[WeedHub] Kamera wieder normal.")
-	else
-		cam.CameraType = Enum.CameraType.Scriptable
-		cam.CFrame = cam.CFrame * CFrame.new(0,2,0)
-		flyCam = true
-		btnCamera.Text = "Restore Camera"
-		print("[WeedHub] Freie Kamera aktiviert (Demo).")
-	end
-end)
-
-btnDebug.MouseButton1Click:Connect(function()
-	local char = plr.Character
-	if not char then return end
-	local hum = char:FindFirstChildOfClass("Humanoid")
-	print("------ WeedHub Debug ------")
-	print("Spieler:", plr.Name)
-	print("Position:", char:FindFirstChild("HumanoidRootPart") and char.HumanoidRootPart.Position)
-	print("WalkSpeed:", hum and hum.WalkSpeed)
-	print("CameraType:", cam.CameraType)
-	print("-----------------------------")
-end)
-
-btnTheme.MouseButton1Click:Connect(function()
-	if dark then
-		dark = false
-		Frame.BackgroundColor3 = Color3.fromRGB(220,220,220)
-		for _,b in ipairs(Frame:GetChildren()) do
-			if b:IsA("TextButton") then b.BackgroundColor3 = Color3.fromRGB(0,120,0) end
+-- 🧱 Physikfunktion, damit du durch Wände gehst
+RunService.Stepped:Connect(function()
+	if noclip and player.Character then
+		for _, part in pairs(player.Character:GetDescendants()) do
+			if part:IsA("BasePart") and part.CanCollide then
+				part.CanCollide = false
+			end
 		end
-		btnTheme.Text = "Toggle Dark Mode"
-	else
-		dark = true
-		Frame.BackgroundColor3 = Color3.fromRGB(25,25,25)
-		for _,b in ipairs(Frame:GetChildren()) do
-			if b:IsA("TextButton") then b.BackgroundColor3 = Color3.fromRGB(50,150,50) end
+	end
+end)
+
+-- Rücksetzen, wenn man respawnt
+player.CharacterAdded:Connect(function(char)
+	character = char
+	if noclip then
+		task.wait(1)
+		for _, part in pairs(char:GetDescendants()) do
+			if part:IsA("BasePart") then
+				part.CanCollide = false
+			end
 		end
-		btnTheme.Text = "Toggle Light Mode"
 	end
 end)
