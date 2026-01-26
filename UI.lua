@@ -1,4 +1,4 @@
--- Luau Executor Menu
+-- Luau Executor Menu v2
 -- Load via: loadstring(game:HttpGet("YOUR_GITHUB_RAW_URL"))()
 
 local Players = game:GetService("Players")
@@ -7,6 +7,16 @@ local TweenService = game:GetService("TweenService")
 
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
+
+-- Global Settings
+getgenv().MenuSettings = getgenv().MenuSettings or {
+    speedBoostEnabled = false,
+    noclipEnabled = false,
+    espEnabled = false,
+    speedBoostKey = Enum.KeyCode.Q,
+    originalWalkSpeed = 16,
+    originalJumpPower = 50
+}
 
 -- Entferne alte Instanzen falls vorhanden
 if playerGui:FindFirstChild("ExecutorMenu") then
@@ -23,8 +33,8 @@ screenGui.Parent = playerGui
 -- Hauptframe
 local mainFrame = Instance.new("Frame")
 mainFrame.Name = "MainFrame"
-mainFrame.Size = UDim2.new(0, 500, 0, 350)
-mainFrame.Position = UDim2.new(0.5, -250, 0.5, -175)
+mainFrame.Size = UDim2.new(0, 500, 0, 400)
+mainFrame.Position = UDim2.new(0.5, -250, 0.5, -200)
 mainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
 mainFrame.BorderSizePixel = 0
 mainFrame.Parent = screenGui
@@ -133,10 +143,142 @@ contentLayout.Parent = contentFrame
 
 -- Automatische Canvas-Größe anpassen
 contentLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-    contentFrame.CanvasSize = UDim2.new(0, 0, 0, contentLayout.AbsoluteContentSize.Y)
+    contentFrame.CanvasSize = UDim2.new(0, 0, 0, contentLayout.AbsoluteContentSize.Y + 10)
 end)
 
--- Button Erstellungs-Funktion
+-- Toggle Button Erstellungs-Funktion
+local function createToggleButton(name, emoji, defaultState, callback)
+    local container = Instance.new("Frame")
+    container.Name = name .. "Container"
+    container.Size = UDim2.new(1, 0, 0, 40)
+    container.BackgroundColor3 = Color3.fromRGB(45, 45, 65)
+    container.BorderSizePixel = 0
+    container.Parent = contentFrame
+    
+    local containerCorner = Instance.new("UICorner")
+    containerCorner.CornerRadius = UDim.new(0, 8)
+    containerCorner.Parent = container
+    
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(1, -70, 1, 0)
+    label.Position = UDim2.new(0, 10, 0, 0)
+    label.BackgroundTransparency = 1
+    label.Text = emoji .. " " .. name
+    label.TextColor3 = Color3.fromRGB(255, 255, 255)
+    label.TextSize = 14
+    label.Font = Enum.Font.Gotham
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.Parent = container
+    
+    local toggleButton = Instance.new("TextButton")
+    toggleButton.Name = "ToggleButton"
+    toggleButton.Size = UDim2.new(0, 50, 0, 26)
+    toggleButton.Position = UDim2.new(1, -60, 0.5, -13)
+    toggleButton.BackgroundColor3 = defaultState and Color3.fromRGB(50, 200, 50) or Color3.fromRGB(150, 50, 50)
+    toggleButton.Text = defaultState and "ON" or "OFF"
+    toggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    toggleButton.TextSize = 12
+    toggleButton.Font = Enum.Font.GothamBold
+    toggleButton.BorderSizePixel = 0
+    toggleButton.Parent = container
+    
+    local toggleCorner = Instance.new("UICorner")
+    toggleCorner.CornerRadius = UDim.new(0, 6)
+    toggleCorner.Parent = toggleButton
+    
+    -- Hover-Effekt
+    container.MouseEnter:Connect(function()
+        TweenService:Create(container, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(60, 60, 85)}):Play()
+    end)
+    
+    container.MouseLeave:Connect(function()
+        TweenService:Create(container, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(45, 45, 65)}):Play()
+    end)
+    
+    toggleButton.MouseButton1Click:Connect(function()
+        local newState = callback()
+        toggleButton.Text = newState and "ON" or "OFF"
+        TweenService:Create(toggleButton, TweenInfo.new(0.2), {
+            BackgroundColor3 = newState and Color3.fromRGB(50, 200, 50) or Color3.fromRGB(150, 50, 50)
+        }):Play()
+    end)
+    
+    return container, toggleButton
+end
+
+-- Keybind Button Erstellungs-Funktion
+local function createKeybindButton(name, emoji, defaultKey, callback)
+    local container = Instance.new("Frame")
+    container.Name = name .. "Container"
+    container.Size = UDim2.new(1, 0, 0, 40)
+    container.BackgroundColor3 = Color3.fromRGB(45, 45, 65)
+    container.BorderSizePixel = 0
+    container.Parent = contentFrame
+    
+    local containerCorner = Instance.new("UICorner")
+    containerCorner.CornerRadius = UDim.new(0, 8)
+    containerCorner.Parent = container
+    
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(1, -100, 1, 0)
+    label.Position = UDim2.new(0, 10, 0, 0)
+    label.BackgroundTransparency = 1
+    label.Text = emoji .. " " .. name
+    label.TextColor3 = Color3.fromRGB(255, 255, 255)
+    label.TextSize = 14
+    label.Font = Enum.Font.Gotham
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.Parent = container
+    
+    local keybindButton = Instance.new("TextButton")
+    keybindButton.Name = "KeybindButton"
+    keybindButton.Size = UDim2.new(0, 80, 0, 26)
+    keybindButton.Position = UDim2.new(1, -90, 0.5, -13)
+    keybindButton.BackgroundColor3 = Color3.fromRGB(70, 70, 100)
+    keybindButton.Text = defaultKey.Name
+    keybindButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    keybindButton.TextSize = 12
+    keybindButton.Font = Enum.Font.GothamBold
+    keybindButton.BorderSizePixel = 0
+    keybindButton.Parent = container
+    
+    local keybindCorner = Instance.new("UICorner")
+    keybindCorner.CornerRadius = UDim.new(0, 6)
+    keybindCorner.Parent = keybindButton
+    
+    -- Hover-Effekt
+    container.MouseEnter:Connect(function()
+        TweenService:Create(container, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(60, 60, 85)}):Play()
+    end)
+    
+    container.MouseLeave:Connect(function()
+        TweenService:Create(container, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(45, 45, 65)}):Play()
+    end)
+    
+    local waitingForKey = false
+    keybindButton.MouseButton1Click:Connect(function()
+        if waitingForKey then return end
+        waitingForKey = true
+        keybindButton.Text = "..."
+        keybindButton.BackgroundColor3 = Color3.fromRGB(100, 200, 100)
+        
+        local connection
+        connection = UserInputService.InputBegan:Connect(function(input, gameProcessed)
+            if input.UserInputType == Enum.UserInputType.Keyboard then
+                waitingForKey = false
+                local newKey = input.KeyCode
+                keybindButton.Text = newKey.Name
+                keybindButton.BackgroundColor3 = Color3.fromRGB(70, 70, 100)
+                callback(newKey)
+                connection:Disconnect()
+            end
+        end)
+    end)
+    
+    return container, keybindButton
+end
+
+-- Standard Button (nicht toggle)
 local function createButton(name, callback)
     local button = Instance.new("TextButton")
     button.Name = name
@@ -153,7 +295,6 @@ local function createButton(name, callback)
     buttonCorner.CornerRadius = UDim.new(0, 8)
     buttonCorner.Parent = button
     
-    -- Hover-Effekt
     button.MouseEnter:Connect(function()
         TweenService:Create(button, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(60, 60, 85)}):Play()
     end)
@@ -167,26 +308,80 @@ local function createButton(name, callback)
     return button
 end
 
--- Beispiel-Buttons
-createButton("🏃 Speed Boost", function()
-    if player.Character and player.Character:FindFirstChild("Humanoid") then
-        player.Character.Humanoid.WalkSpeed = 50
-        print("Speed erhöht auf 50")
-    end
-end)
+-- ===== FEATURES =====
 
-createButton("🦘 Jump Power", function()
-    if player.Character and player.Character:FindFirstChild("Humanoid") then
-        player.Character.Humanoid.JumpPower = 100
-        print("Jump Power erhöht auf 100")
-    end
-end)
-
-createButton("💫 Noclip Toggle", function()
-    local noclip = not getgenv().noclipEnabled
-    getgenv().noclipEnabled = noclip
+-- Speed Boost Funktion
+local function toggleSpeedBoost()
+    getgenv().MenuSettings.speedBoostEnabled = not getgenv().MenuSettings.speedBoostEnabled
     
-    if noclip then
+    if getgenv().MenuSettings.speedBoostEnabled then
+        if player.Character and player.Character:FindFirstChild("Humanoid") then
+            getgenv().MenuSettings.originalWalkSpeed = player.Character.Humanoid.WalkSpeed
+            player.Character.Humanoid.WalkSpeed = 50
+        end
+        
+        -- Connection für neue Characters
+        if getgenv().speedBoostConnection then
+            getgenv().speedBoostConnection:Disconnect()
+        end
+        
+        getgenv().speedBoostConnection = player.CharacterAdded:Connect(function(char)
+            wait(0.1)
+            if getgenv().MenuSettings.speedBoostEnabled and char:FindFirstChild("Humanoid") then
+                char.Humanoid.WalkSpeed = 50
+            end
+        end)
+        
+        print("Speed Boost aktiviert (Speed: 50)")
+    else
+        if player.Character and player.Character:FindFirstChild("Humanoid") then
+            player.Character.Humanoid.WalkSpeed = getgenv().MenuSettings.originalWalkSpeed
+        end
+        
+        if getgenv().speedBoostConnection then
+            getgenv().speedBoostConnection:Disconnect()
+        end
+        
+        print("Speed Boost deaktiviert")
+    end
+    
+    return getgenv().MenuSettings.speedBoostEnabled
+end
+
+-- Speed Boost Toggle
+createToggleButton("Speed Boost", "🏃", getgenv().MenuSettings.speedBoostEnabled, toggleSpeedBoost)
+
+-- Speed Boost Keybind
+createKeybindButton("Speed Boost Keybind", "⌨️", getgenv().MenuSettings.speedBoostKey, function(newKey)
+    getgenv().MenuSettings.speedBoostKey = newKey
+    print("Speed Boost Keybind geändert zu: " .. newKey.Name)
+end)
+
+-- Jump Power Toggle
+createToggleButton("Jump Power", "🦘", false, function()
+    local enabled = not (player.Character and player.Character:FindFirstChild("Humanoid") and player.Character.Humanoid.JumpPower > 50)
+    
+    if enabled then
+        if player.Character and player.Character:FindFirstChild("Humanoid") then
+            getgenv().MenuSettings.originalJumpPower = player.Character.Humanoid.JumpPower
+            player.Character.Humanoid.JumpPower = 100
+        end
+        print("Jump Power aktiviert (Power: 100)")
+    else
+        if player.Character and player.Character:FindFirstChild("Humanoid") then
+            player.Character.Humanoid.JumpPower = getgenv().MenuSettings.originalJumpPower
+        end
+        print("Jump Power deaktiviert")
+    end
+    
+    return enabled
+end)
+
+-- Noclip Toggle
+createToggleButton("Noclip", "💫", getgenv().MenuSettings.noclipEnabled, function()
+    getgenv().MenuSettings.noclipEnabled = not getgenv().MenuSettings.noclipEnabled
+    
+    if getgenv().MenuSettings.noclipEnabled then
         getgenv().noclipConnection = game:GetService("RunService").Stepped:Connect(function()
             if player.Character then
                 for _, part in pairs(player.Character:GetDescendants()) do
@@ -201,38 +396,102 @@ createButton("💫 Noclip Toggle", function()
         if getgenv().noclipConnection then
             getgenv().noclipConnection:Disconnect()
         end
-        print("Noclip deaktiviert")
-    end
-end)
-
-createButton("👁️ ESP (Player Names)", function()
-    for _, otherPlayer in pairs(Players:GetPlayers()) do
-        if otherPlayer ~= player and otherPlayer.Character and otherPlayer.Character:FindFirstChild("Head") then
-            local head = otherPlayer.Character.Head
-            if not head:FindFirstChild("PlayerESP") then
-                local billboard = Instance.new("BillboardGui")
-                billboard.Name = "PlayerESP"
-                billboard.Adornee = head
-                billboard.Size = UDim2.new(0, 100, 0, 40)
-                billboard.StudsOffset = Vector3.new(0, 2, 0)
-                billboard.AlwaysOnTop = true
-                billboard.Parent = head
-                
-                local nameLabel = Instance.new("TextLabel")
-                nameLabel.Size = UDim2.new(1, 0, 1, 0)
-                nameLabel.BackgroundTransparency = 1
-                nameLabel.Text = otherPlayer.Name
-                nameLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-                nameLabel.TextStrokeTransparency = 0.5
-                nameLabel.TextSize = 14
-                nameLabel.Font = Enum.Font.GothamBold
-                nameLabel.Parent = billboard
+        if player.Character then
+            for _, part in pairs(player.Character:GetDescendants()) do
+                if part:IsA("BasePart") then
+                    part.CanCollide = true
+                end
             end
         end
+        print("Noclip deaktiviert")
     end
-    print("ESP aktiviert")
+    
+    return getgenv().MenuSettings.noclipEnabled
 end)
 
+-- ESP Toggle
+createToggleButton("ESP (Player Names)", "👁️", getgenv().MenuSettings.espEnabled, function()
+    getgenv().MenuSettings.espEnabled = not getgenv().MenuSettings.espEnabled
+    
+    if getgenv().MenuSettings.espEnabled then
+        -- ESP für existierende Spieler
+        for _, otherPlayer in pairs(Players:GetPlayers()) do
+            if otherPlayer ~= player and otherPlayer.Character and otherPlayer.Character:FindFirstChild("Head") then
+                local head = otherPlayer.Character.Head
+                if not head:FindFirstChild("PlayerESP") then
+                    local billboard = Instance.new("BillboardGui")
+                    billboard.Name = "PlayerESP"
+                    billboard.Adornee = head
+                    billboard.Size = UDim2.new(0, 100, 0, 40)
+                    billboard.StudsOffset = Vector3.new(0, 2, 0)
+                    billboard.AlwaysOnTop = true
+                    billboard.Parent = head
+                    
+                    local nameLabel = Instance.new("TextLabel")
+                    nameLabel.Size = UDim2.new(1, 0, 1, 0)
+                    nameLabel.BackgroundTransparency = 1
+                    nameLabel.Text = otherPlayer.Name
+                    nameLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+                    nameLabel.TextStrokeTransparency = 0.5
+                    nameLabel.TextSize = 14
+                    nameLabel.Font = Enum.Font.GothamBold
+                    nameLabel.Parent = billboard
+                end
+            end
+        end
+        
+        -- ESP für neue Spieler
+        getgenv().espConnection = Players.PlayerAdded:Connect(function(newPlayer)
+            newPlayer.CharacterAdded:Connect(function(char)
+                wait(0.5)
+                if getgenv().MenuSettings.espEnabled and char:FindFirstChild("Head") then
+                    local head = char.Head
+                    if not head:FindFirstChild("PlayerESP") then
+                        local billboard = Instance.new("BillboardGui")
+                        billboard.Name = "PlayerESP"
+                        billboard.Adornee = head
+                        billboard.Size = UDim2.new(0, 100, 0, 40)
+                        billboard.StudsOffset = Vector3.new(0, 2, 0)
+                        billboard.AlwaysOnTop = true
+                        billboard.Parent = head
+                        
+                        local nameLabel = Instance.new("TextLabel")
+                        nameLabel.Size = UDim2.new(1, 0, 1, 0)
+                        nameLabel.BackgroundTransparency = 1
+                        nameLabel.Text = newPlayer.Name
+                        nameLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+                        nameLabel.TextStrokeTransparency = 0.5
+                        nameLabel.TextSize = 14
+                        nameLabel.Font = Enum.Font.GothamBold
+                        nameLabel.Parent = billboard
+                    end
+                end
+            end)
+        end)
+        
+        print("ESP aktiviert")
+    else
+        -- ESP entfernen
+        for _, otherPlayer in pairs(Players:GetPlayers()) do
+            if otherPlayer.Character and otherPlayer.Character:FindFirstChild("Head") then
+                local esp = otherPlayer.Character.Head:FindFirstChild("PlayerESP")
+                if esp then
+                    esp:Destroy()
+                end
+            end
+        end
+        
+        if getgenv().espConnection then
+            getgenv().espConnection:Disconnect()
+        end
+        
+        print("ESP deaktiviert")
+    end
+    
+    return getgenv().MenuSettings.espEnabled
+end)
+
+-- Standard Buttons
 createButton("🔄 Reset Character", function()
     if player.Character and player.Character:FindFirstChild("Humanoid") then
         player.Character.Humanoid.Health = 0
@@ -242,6 +501,13 @@ end)
 createButton("📍 Teleport to Spawn", function()
     if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
         player.Character.HumanoidRootPart.CFrame = CFrame.new(0, 5, 0)
+    end
+end)
+
+-- Keybind Listener für Speed Boost
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if not gameProcessed and input.KeyCode == getgenv().MenuSettings.speedBoostKey then
+        toggleSpeedBoost()
     end
 end)
 
@@ -282,8 +548,29 @@ UserInputService.InputChanged:Connect(function(input)
     end
 end)
 
--- Schließen-Funktion
+-- Schließen-Funktion mit Cleanup
 closeButton.MouseButton1Click:Connect(function()
+    -- Alle Features deaktivieren
+    if getgenv().MenuSettings.speedBoostEnabled then
+        toggleSpeedBoost()
+    end
+    
+    if getgenv().MenuSettings.noclipEnabled and getgenv().noclipConnection then
+        getgenv().noclipConnection:Disconnect()
+    end
+    
+    if getgenv().MenuSettings.espEnabled then
+        for _, otherPlayer in pairs(Players:GetPlayers()) do
+            if otherPlayer.Character and otherPlayer.Character:FindFirstChild("Head") then
+                local esp = otherPlayer.Character.Head:FindFirstChild("PlayerESP")
+                if esp then esp:Destroy() end
+            end
+        end
+        if getgenv().espConnection then
+            getgenv().espConnection:Disconnect()
+        end
+    end
+    
     screenGui:Destroy()
 end)
 
@@ -295,7 +582,7 @@ minimizeButton.MouseButton1Click:Connect(function()
         TweenService:Create(mainFrame, TweenInfo.new(0.3), {Size = UDim2.new(0, 500, 0, 40)}):Play()
         minimizeButton.Text = "+"
     else
-        TweenService:Create(mainFrame, TweenInfo.new(0.3), {Size = UDim2.new(0, 500, 0, 350)}):Play()
+        TweenService:Create(mainFrame, TweenInfo.new(0.3), {Size = UDim2.new(0, 500, 0, 400)}):Play()
         minimizeButton.Text = "—"
     end
 end)
@@ -303,7 +590,8 @@ end)
 -- Einblend-Animation
 mainFrame.Size = UDim2.new(0, 0, 0, 0)
 TweenService:Create(mainFrame, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out), 
-    {Size = UDim2.new(0, 500, 0, 350)}
+    {Size = UDim2.new(0, 500, 0, 400)}
 ):Play()
 
-print("Executor Menu erfolgreich geladen!")
+print("Executor Menu v2 erfolgreich geladen!")
+print("Speed Boost Keybind: " .. getgenv().MenuSettings.speedBoostKey.Name)
