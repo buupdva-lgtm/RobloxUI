@@ -1,42 +1,40 @@
-# Simple Kick Player Menu System
+# Simple Roblox-style kick menu system in Python
 
-class PlayerMenu:
+class KickMenu:
     def __init__(self):
-        self.players = ['Alice', 'Bob', 'Charlie', 'Diana', 'Eve']
+        self.players = ['Player1', 'Player2', 'Player3', 'Player4']
+        self.kicked = []
     
     def display_menu(self):
-        print("\n=== Kick Player Menu ===")
-        print("Current Players:")
+        print('=== KICK MENU ===')
         for i, player in enumerate(self.players, 1):
-            print(f"{i}. {player}")
-        print(f"{len(self.players) + 1}. Exit")
+            print(f'{i}. {player}')
+        print(f'{len(self.players) + 1}. Exit')
     
-    def kick_player(self, choice):
-        if 1 <= choice <= len(self.players):
-            kicked = self.players.pop(choice - 1)
-            print(f"✓ {kicked} has been kicked from the game.")
-            return True
-        elif choice == len(self.players) + 2:
-            return False
+    def kick_player(self, player_index):
+        if 0 <= player_index < len(self.players):
+            player = self.players.pop(player_index)
+            self.kicked.append(player)
+            print(f'✓ {player} has been kicked!')
         else:
-            print("Invalid choice. Please try again.")
-            return True
+            print('Invalid selection')
     
     def run(self):
-        while True:
+        while len(self.players) > 0:
             self.display_menu()
             try:
-                choice = int(input("Select player to kick (or exit): "))
-                if not self.kick_player(choice):
-                    print("Exiting menu...")
+                choice = int(input('Select player to kick: ')) - 1
+                if choice == len(self.players):
                     break
+                self.kick_player(choice)
             except ValueError:
-                print("Please enter a valid number.")
+                print('Invalid input')
+        print(f'\nKicked players: {self.kicked}')
 
-# Demo: Simulate kicking players without user input
-menu = PlayerMenu()
-print("Initial players:", menu.players)
-menu.kick_player(2)  # Kick Bob
-print("After kicking:", menu.players)
-menu.kick_player(1)  # Kick Alice
-print("Final players:", menu.players)
+# Demo without user input
+menu = KickMenu()
+menu.display_menu()
+menu.kick_player(0)
+menu.kick_player(1)
+print(f'\nRemaining players: {menu.players}')
+print(f'Kicked players: {menu.kicked}')
