@@ -1,15 +1,16 @@
--- 🔧 Roblox Noclip Menü mit Design & Shortcut
--- Wichtig: Nur in deinem eigenen Spiel zum Testen oder Debuggen verwenden!
+-- 🌌 Noclip Menü mit Auto-Start, Animation & Tastatur-Shortcut
+-- ⚠️ Nur für DEINE eigenen Roblox-Spiele gedacht (nicht zum Exploiten)! ⚠️
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
 
 local player = Players.LocalPlayer
-local character = player.Character or player.CharacterAdded:Wait()
 local noclip = false
+local animating = true
 
--- 🎨 GUI-Erstellung
+-- 🪟 GUI-Erstellung
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "NoclipMenu"
 screenGui.ResetOnSpawn = false
@@ -17,10 +18,10 @@ screenGui.IgnoreGuiInset = true
 screenGui.Parent = player:WaitForChild("PlayerGui")
 
 local frame = Instance.new("Frame")
-frame.Size = UDim2.new(0, 160, 0, 70)
+frame.Size = UDim2.new(0, 180, 0, 80)
 frame.Position = UDim2.new(0, 20, 0, 20)
 frame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-frame.BackgroundTransparency = 0.3
+frame.BackgroundTransparency = 1 -- Start transparent
 frame.BorderSizePixel = 0
 frame.Parent = screenGui
 
@@ -29,18 +30,22 @@ stroke.Thickness = 2
 stroke.Color = Color3.fromRGB(255, 255, 255)
 stroke.Parent = frame
 
+-- Abrundung
+local corner1 = Instance.new("UICorner", frame)
+corner1.CornerRadius = UDim.new(0, 8)
+
 local label = Instance.new("TextLabel")
-label.Size = UDim2.new(1, 0, 0, 25)
+label.Size = UDim2.new(1, 0, 0, 28)
 label.BackgroundTransparency = 1
 label.Text = "🔮 Noclip Menü"
 label.TextColor3 = Color3.new(1, 1, 1)
-label.TextScaled = true
 label.Font = Enum.Font.GothamBold
+label.TextScaled = true
 label.Parent = frame
 
 local button = Instance.new("TextButton")
-button.Size = UDim2.new(1, -20, 0, 30)
-button.Position = UDim2.new(0, 10, 0, 35)
+button.Size = UDim2.new(1, -20, 0, 32)
+button.Position = UDim2.new(0, 10, 0, 40)
 button.BackgroundColor3 = Color3.fromRGB(180, 50, 50)
 button.TextColor3 = Color3.new(1, 1, 1)
 button.Font = Enum.Font.GothamBold
@@ -48,11 +53,20 @@ button.TextScaled = true
 button.Text = "Noclip: AUS"
 button.Parent = frame
 
-local corner1 = Instance.new("UICorner", frame)
-corner1.CornerRadius = UDim.new(0, 8)
-
 local corner2 = Instance.new("UICorner", button)
 corner2.CornerRadius = UDim.new(0, 6)
+
+-- ✨ Einblend-Animation beim Start
+frame.Position = UDim2.new(0, 20, 0, -100) -- Start außerhalb des Bildschirms
+local tween = TweenService:Create(
+	frame,
+	TweenInfo.new(1.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+	{Position = UDim2.new(0, 20, 0, 20), BackgroundTransparency = 0.3}
+)
+tween:Play()
+tween.Completed:Connect(function()
+	animating = false
+end)
 
 -- ⚙️ Funktionen
 local function setNoclip(state)
@@ -79,7 +93,7 @@ UserInputService.InputBegan:Connect(function(input, gpe)
 	end
 end)
 
--- 🧱 Physikfunktion, damit du durch Wände gehst
+-- 🚶 Durch Wände laufen
 RunService.Stepped:Connect(function()
 	if noclip and player.Character then
 		for _, part in pairs(player.Character:GetDescendants()) do
@@ -90,9 +104,8 @@ RunService.Stepped:Connect(function()
 	end
 end)
 
--- Rücksetzen, wenn man respawnt
+-- 💀 Nach Respawn wieder aktivieren
 player.CharacterAdded:Connect(function(char)
-	character = char
 	if noclip then
 		task.wait(1)
 		for _, part in pairs(char:GetDescendants()) do
