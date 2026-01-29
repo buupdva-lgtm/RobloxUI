@@ -1,202 +1,399 @@
--- Advanced Roblox Script for Executors
--- Compatible with: Synapse X, Script-Ware, KRNL, etc.
--- Creator: GLM 4.6
--- Platform: Venice.ai
-
+-- Part 1: Basic Structure and GUI
 -- Services
 local Players = game:GetService("Players")
-local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
-local TweenService = game:GetService("TweenService")
-local HttpService = game:GetService("HttpService")
-local StarterGui = game:GetService("StarterGui")
+local UserInputService = game:GetService("UserInputService")
 local Workspace = game:GetService("Workspace")
+local CoreGui = game:GetService("CoreGui")
 local Camera = Workspace.CurrentCamera
-local LocalPlayer = Players.LocalPlayer
-local Mouse = LocalPlayer:GetMouse()
+
+-- Player
+local player = Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoid = character:WaitForChild("Humanoid")
 
 -- Variables
-local AimbotEnabled = false
-local WallhackEnabled = false
-local SpeedEnabled = false
-local FlyEnabled = false
-local JumpPowerEnabled = false
-local AnimationsEnabled = false
-local SkinChangerEnabled = false
-local AimbotTarget = nil
-local flySpeed = 50
-local speedValue = 25
-local jumpPowerValue = 50
-local aimbotFOV = 150
-local aimbotSmoothness = 0.2
-local aimbotTeamCheck = false
-local aimbotVisibleCheck = true
 local flying = false
-local flyVelocity = Instance.new("BodyVelocity")
-local flyGyro = Instance.new("BodyGyro")
+local speedEnabled = false
+local jumpEnabled = false
+local aimbotEnabled = false
+local espEnabled = false
+local noClipEnabled = false
+local infiniteJumpEnabled = false
 
--- Animation IDs
-local AnimationList = {
-    ["Dance"] = "rbxassetid://507771019",
-    ["Laugh"] = "rbxassetid://129423030",
-    ["Wave"] = "rbxassetid://507770669",
-    ["Cheer"] = "rbxassetid://507770453",
-    ["Point"] = "rbxassetid://507770682"
-}
+-- Simple GUI
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "ExploitGUI"
+screenGui.Parent = CoreGui
+screenGui.ResetOnSpawn = false
 
--- Config System
-local Configs = {}
-local ConfigFolder = "AdvancedScriptConfigs"
-local ConfigName = "Default"
+local mainFrame = Instance.new("Frame")
+mainFrame.Name = "MainFrame"
+mainFrame.Parent = screenGui
+mainFrame.BackgroundColor3 = Color3.new(0.1, 0.1, 0.2)
+mainFrame.BorderSizePixel = 0
+mainFrame.Position = UDim2.new(0.5, -200, 0.5, -150)
+mainFrame.Size = UDim2.new(0, 400, 0, 300)
+mainFrame.Active = true
+mainFrame.Draggable = true
 
--- Function to create GUI
-local function createGUI()
-    -- Create ScreenGui
-    local ScreenGui = Instance.new("ScreenGui")
-    ScreenGui.Name = "AdvancedScriptGUI"
-    ScreenGui.Parent = game:GetService("CoreGui")
-    ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-    ScreenGui.ResetOnSpawn = false
+local titleBar = Instance.new("Frame")
+titleBar.Name = "TitleBar"
+titleBar.Parent = mainFrame
+titleBar.BackgroundColor3 = Color3.new(0.15, 0.15, 0.25)
+titleBar.BorderSizePixel = 0
+titleBar.Position = UDim2.new(0, 0, 0, 0)
+titleBar.Size = UDim2.new(1, 0, 0, 40)
+
+local title = Instance.new("TextLabel")
+title.Name = "Title"
+title.Parent = titleBar
+title.BackgroundColor3 = Color3.new(1, 1, 1)
+title.BackgroundTransparency = 1
+title.Position = UDim2.new(0, 10, 0, 0)
+title.Size = UDim2.new(0, 200, 1, 0)
+title.Font = Enum.Font.SourceSansBold
+title.Text = "Velocity Exploit"
+title.TextColor3 = Color3.new(1, 1, 1)
+title.TextSize = 18
+
+local closeButton = Instance.new("TextButton")
+closeButton.Name = "CloseButton"
+closeButton.Parent = titleBar
+closeButton.BackgroundColor3 = Color3.new(0.8, 0.2, 0.2)
+closeButton.BorderSizePixel = 0
+closeButton.Position = UDim2.new(1, -40, 0, 5)
+closeButton.Size = UDim2.new(0, 30, 0, 30)
+closeButton.Font = Enum.Font.SourceSansBold
+closeButton.Text = "X"
+closeButton.TextColor3 = Color3.new(1, 1, 1)
+closeButton.TextSize = 16
+
+closeButton.MouseButton1Click:Connect(function()
+    screenGui:Destroy()
+end)
+
+-- Content Frame
+local contentFrame = Instance.new("Frame")
+contentFrame.Name = "ContentFrame"
+contentFrame.Parent = mainFrame
+contentFrame.BackgroundColor3 = Color3.new(0.08, 0.08, 0.15)
+contentFrame.BorderSizePixel = 0
+contentFrame.Position = UDim2.new(0, 0, 0, 40)
+contentFrame.Size = UDim2.new(1, 0, 1, -40)
+
+print("Part 1 loaded: GUI structure created")
+-- Part 2: Helper Functions
+-- Create Toggle Function
+local function createToggle(name, y, callback)
+    local frame = Instance.new("Frame")
+    frame.Name = name .. "Frame"
+    frame.Parent = contentFrame
+    frame.BackgroundColor3 = Color3.new(0.12, 0.12, 0.2)
+    frame.BorderSizePixel = 0
+    frame.Position = UDim2.new(0, 10, 0, y)
+    frame.Size = UDim2.new(1, -20, 0, 30)
     
-    -- Main Frame
-    local MainFrame = Instance.new("Frame")
-    MainFrame.Name = "MainFrame"
-    MainFrame.Parent = ScreenGui
-    MainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
-    MainFrame.BorderSizePixel = 0
-    MainFrame.Position = UDim2.new(0.5, -300, 0.5, -250)
-    MainFrame.Size = UDim2.new(0, 600, 0, 500)
-    MainFrame.ClipsDescendants = true
-    MainFrame.Draggable = true
+    local label = Instance.new("TextLabel")
+    label.Name = "Label"
+    label.Parent = frame
+    label.BackgroundColor3 = Color3.new(1, 1, 1)
+    label.BackgroundTransparency = 1
+    label.Position = UDim2.new(0, 10, 0, 0)
+    label.Size = UDim2.new(0.7, 0, 1, 0)
+    label.Font = Enum.Font.SourceSans
+    label.Text = name
+    label.TextColor3 = Color3.new(1, 1, 1)
+    label.TextSize = 14
+    label.TextXAlignment = Enum.TextXAlignment.Left
     
-    -- Top Bar
-    local TopBar = Instance.new("Frame")
-    TopBar.Name = "TopBar"
-    TopBar.Parent = MainFrame
-    TopBar.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
-    TopBar.BorderSizePixel = 0
-    TopBar.Position = UDim2.new(0, 0, 0, 0)
-    TopBar.Size = UDim2.new(1, 0, 0, 40)
+    local toggle = Instance.new("TextButton")
+    toggle.Name = "Toggle"
+    toggle.Parent = frame
+    toggle.BackgroundColor3 = Color3.new(0.7, 0.2, 0.2)
+    toggle.BorderSizePixel = 0
+    toggle.Position = UDim2.new(0.8, 0, 0.25, 0)
+    toggle.Size = UDim2.new(0, 50, 0, 20)
+    toggle.Font = Enum.Font.SourceSans
+    toggle.Text = ""
+    toggle.TextSize = 14
     
-    local Title = Instance.new("TextLabel")
-    Title.Name = "Title"
-    Title.Parent = TopBar
-    Title.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-    Title.BackgroundTransparency = 1
-    Title.Position = UDim2.new(0, 10, 0, 0)
-    Title.Size = UDim2.new(0, 200, 1, 0)
-    Title.Font = Enum.Font.GothamBold
-    Title.Text = "Advanced Script Hub"
-    Title.TextColor3 = Color3.fromRGB(255, 255, 255)
-    Title.TextSize = 18
-    Title.TextXAlignment = Enum.TextXAlignment.Left
+    local state = false
     
-    local CloseButton = Instance.new("TextButton")
-    CloseButton.Name = "CloseButton"
-    CloseButton.Parent = TopBar
-    CloseButton.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
-    CloseButton.BorderSizePixel = 0
-    CloseButton.Position = UDim2.new(1, -40, 0, 5)
-    CloseButton.Size = UDim2.new(0, 30, 0, 30)
-    CloseButton.Font = Enum.Font.GothamBold
-    CloseButton.Text = "X"
-    CloseButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-    CloseButton.TextSize = 14
+    toggle.MouseButton1Click:Connect(function()
+        state = not state
+        toggle.BackgroundColor3 = state and Color3.new(0.2, 0.7, 0.2) or Color3.new(0.7, 0.2, 0.2)
+        callback(state)
+    end)
     
-    -- Tab Buttons
-    local TabButtons = {}
-    local Tabs = {}
+    return toggle
+end
+
+-- Create Button Function
+local function createButton(name, y, callback)
+    local button = Instance.new("TextButton")
+    button.Name = name .. "Button"
+    button.Parent = contentFrame
+    button.BackgroundColor3 = Color3.new(0.2, 0.2, 0.3)
+    button.BorderSizePixel = 0
+    button.Position = UDim2.new(0, 10, 0, y)
+    button.Size = UDim2.new(1, -20, 0, 30)
+    button.Font = Enum.Font.SourceSans
+    button.Text = name
+    button.TextColor3 = Color3.new(1, 1, 1)
+    button.TextSize = 14
     
-    local TabFrame = Instance.new("Frame")
-    TabFrame.Name = "TabFrame"
-    TabFrame.Parent = MainFrame
-    TabFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
-    TabFrame.BorderSizePixel = 0
-    TabFrame.Position = UDim2.new(0, 0, 0, 40)
-    TabFrame.Size = UDim2.new(0, 150, 1, -40)
+    button.MouseButton1Click:Connect(callback)
     
-    local ContentFrame = Instance.new("Frame")
-    ContentFrame.Name = "ContentFrame"
-    ContentFrame.Parent = MainFrame
-    ContentFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
-    ContentFrame.BorderSizePixel = 0
-    ContentFrame.Position = UDim2.new(0, 150, 0, 40)
-    ContentFrame.Size = UDim2.new(1, -150, 1, -40)
+    return button
+end
+
+print("Part 2 loaded: Helper functions created")
+-- Part 3: Fly Function
+-- Fly Function
+local function fly(enabled)
+    flying = enabled
     
-    -- Create Tabs
-    local function CreateTab(name, id)
-        local TabButton = Instance.new("TextButton")
-        TabButton.Name = name .. "Tab"
-        TabButton.Parent = TabFrame
-        TabButton.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
-        TabButton.BorderSizePixel = 0
-        TabButton.Position = UDim2.new(0, 5, 0, 5 + (#TabButtons * 45))
-        TabButton.Size = UDim2.new(1, -10, 0, 40)
-        TabButton.Font = Enum.Font.Gotham
-        TabButton.Text = name
-        TabButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-        TabButton.TextSize = 14
-        TabButton.TextXAlignment = Enum.TextXAlignment.Left
-        TabButton.AutoButtonColor = false
+    if enabled then
+        local flyPart = Instance.new("Part")
+        flyPart.Name = "FlyPart"
+        flyPart.Parent = character
+        flyPart.Anchored = true
+        flyPart.CanCollide = false
+        flyPart.Size = Vector3.new(5, 1, 5)
+        flyPart.Transparency = 1
         
-        local Tab = Instance.new("ScrollingFrame")
-        Tab.Name = name .. "Content"
-        Tab.Parent = ContentFrame
-        Tab.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
-        Tab.BorderSizePixel = 0
-        Tab.Position = UDim2.new(0, 0, 0, 0)
-        Tab.Size = UDim2.new(1, 0, 1, 0)
-        Tab.Visible = false
-        Tab.ScrollBarThickness = 5
-        Tab.ScrollBarImageColor3 = Color3.fromRGB(60, 60, 70)
+        local bv = Instance.new("BodyVelocity")
+        bv.MaxForce = Vector3.new(10000, 10000, 10000)
+        bv.Parent = character.HumanoidRootPart
+        bv.Name = "FlyBV"
         
-        local UIListLayout = Instance.new("UIListLayout")
-        UIListLayout.Parent = Tab
-        UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
-        UIListLayout.Padding = UDim.new(0, 5)
+        local bg = Instance.new("BodyGyro")
+        bg.MaxTorque = Vector3.new(10000, 10000, 10000)
+        bg.Parent = character.HumanoidRootPart
+        bg.Name = "FlyBG"
         
-        TabButtons[name] = TabButton
-        Tabs[name] = Tab
-        
-        -- Tab Button Click
-        TabButton.MouseButton1Click:Connect(function()
-            for _, tab in pairs(Tabs) do
-                tab.Visible = false
+        local flyConnection
+        flyConnection = RunService.Heartbeat:Connect(function()
+            if flying then
+                local cam = Workspace.CurrentCamera
+                bg.CFrame = cam.CFrame
+                
+                local moveVector = Vector3.new(0, 0, 0)
+                
+                if UserInputService:IsKeyDown(Enum.KeyCode.W) then
+                    moveVector = moveVector + cam.CFrame.lookVector * 50
+                end
+                if UserInputService:IsKeyDown(Enum.KeyCode.S) then
+                    moveVector = moveVector - cam.CFrame.lookVector * 50
+                end
+                if UserInputService:IsKeyDown(Enum.KeyCode.A) then
+                    moveVector = moveVector - cam.CFrame.rightVector * 50
+                end
+                if UserInputService:IsKeyDown(Enum.KeyCode.D) then
+                    moveVector = moveVector + cam.CFrame.rightVector * 50
+                end
+                if UserInputService:IsKeyDown(Enum.KeyCode.Space) then
+                    moveVector = moveVector + Vector3.new(0, 50, 0)
+                end
+                if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then
+                    moveVector = moveVector + Vector3.new(0, -50, 0)
+                end
+                
+                bv.Velocity = moveVector
             end
-            for _, btn in pairs(TabButtons) do
-                btn.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
-            end
-            Tab.Visible = true
-            TabButton.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
         end)
         
-        return Tab
+        -- Store connection for cleanup
+        flyPart:SetAttribute("FlyConnection", flyConnection)
+    else
+        -- Stop flying
+        local flyPart = character:FindFirstChild("FlyPart")
+        if flyPart then
+            local connection = flyPart:GetAttribute("FlyConnection")
+            if connection then
+                connection:Disconnect()
+            end
+            flyPart:Destroy()
+        end
+        
+        local bv = character.HumanoidRootPart:
+        -- Part 4: Aimbot Function
+-- Aimbot Function
+local function aimbot(enabled)
+    aimbotEnabled = enabled
+    
+    local aimbotConnection
+    aimbotConnection = RunService.Heartbeat:Connect(function()
+        if aimbotEnabled then
+            local closestPlayer = nil
+            local closestDistance = math.huge
+            
+            for _, targetPlayer in ipairs(Players:GetPlayers()) do
+                if targetPlayer ~= player and targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                    local targetPart = targetPlayer.Character.HumanoidRootPart
+                    local distance = (targetPart.Position - character.HumanoidRootPart.Position).Magnitude
+                    
+                    if distance < closestDistance then
+                        closestDistance = distance
+                        closestPlayer = targetPlayer
+                    end
+                end
+            end
+            
+            if closestPlayer and closestPlayer.Character:FindFirstChild("Head") then
+                local targetPos = closestPlayer.Character.Head.Position
+                local lookAt = CFrame.new(Camera.CFrame.Position, targetPos)
+                Camera.CFrame = Camera.CFrame:Lerp(lookAt, 0.1)
+            end
+        end
+    end)
+    
+    -- Store connection for cleanup
+    if character:FindFirstChild("AimbotConnection") then
+        character.AimbotConnection:Disconnect()
     end
     
-    -- Create Toggle Button
-    local function CreateToggle(parent, name, default, callback)
-        local Frame = Instance.new("Frame")
-        Frame.Name = name .. "Frame"
-        Frame.Parent = parent
-        Frame.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
-        Frame.BorderSizePixel = 0
-        Frame.Size = UDim2.new(1, -10, 0, 40)
-        Frame.LayoutOrder = #parent:GetChildren()
+    local aimbotValue = Instance.new("ObjectValue")
+    aimbotValue.Name = "AimbotConnection"
+    aimbotValue.Parent = character
+    aimbotValue.Value = aimbotConnection
+end
+
+print("Part 4 loaded: Aimbot function created")
+        -- Part 5: ESP/Wallhack Function
+-- ESP Function
+local function esp(enabled)
+    espEnabled = enabled
+    
+    -- Remove existing ESP
+    for _, obj in ipairs(Workspace:GetChildren()) do
+        if obj:IsA("Highlight") and obj.Name == "ESP" then
+            obj:Destroy()
+        end
+    end
+    
+    if enabled then
+        -- Create ESP for all players
+        for _, targetPlayer in ipairs(Players:GetPlayers()) do
+            if targetPlayer ~= player and targetPlayer.Character then
+                local highlight = Instance.new("Highlight")
+                highlight.Name = "ESP"
+                highlight.Parent = targetPlayer.Character
+                highlight.FillTransparency = 0.5
+                highlight.OutlineTransparency = 0
+                highlight.FillColor = targetPlayer.Team and targetPlayer.Team.TeamColor.Color or Color3.new(1, 0, 0)
+            end
+        end
         
-        local Label = Instance.new("TextLabel")
-        Label.Name = "Label"
-        Label.Parent = Frame
-        Label.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-        Label.BackgroundTransparency = 1
-        Label.Position = UDim2.new(0, 10, 0, 0)
-        Label.Size = UDim2.new(0.7, 0, 1, 0)
-        Label.Font = Enum.Font.Gotham
-        Label.Text = name
-        Label.TextColor3 = Color3.fromRGB(255, 255, 255)
-        Label.TextSize = 14
-        Label.TextXAlignment = Enum.TextXAlignment.Left
+        -- Create ESP for new players
+        Players.PlayerAdded:Connect(function(newPlayer)
+            if espEnabled and newPlayer ~= player then
+                newPlayer.CharacterAdded:Connect(function(char)
+                    local highlight = Instance.new("Highlight")
+                    highlight.Name = "ESP"
+                    highlight.Parent = char
+                    highlight.FillTransparency = 0.5
+                    highlight.OutlineTransparency = 0
+                    highlight.FillColor = newPlayer.Team and newPlayer.Team.TeamColor.Color or Color3.new(1, 0, 0)
+                end)
+            end
+        end)
+    end
+end
+
+print("Part 5 loaded: ESP function created")
+        -- Part 6: NoClip Function
+-- NoClip Function
+local function noClip(enabled)
+    noClipEnabled = enabled
+    
+    if enabled then
+        for _, part in ipairs(character:GetChildren()) do
+            if part:IsA("BasePart") then
+                part.CanCollide = false
+            end
+        end
         
-        local Toggle = Instance.new("TextButton")
-        Toggle.Name = "Toggle"
-        Toggle.Parent = Frame
-        Toggle.BackgroundColor3 = default and Color3.fromRGB(50, 200
+        -- Handle new parts
+        character.ChildAdded:Connect(function(child)
+            if noClipEnabled and child:IsA("BasePart") then
+                child.CanCollide = false
+            end
+        end)
+    else
+        for _, part in ipairs(character:GetChildren()) do
+            if part:IsA("BasePart") then
+                part.CanCollide = true
+            end
+        end
+    end
+end
+
+print("Part 6 loaded: NoClip function created")
+        -- Part 7: UI Controls and Final Setup
+-- Create Toggles and Buttons
+createToggle("Fly", 10, function(state)
+    fly(state)
+end)
+
+createToggle("Speed", 50, function(state)
+    speedEnabled = state
+    if state then
+        humanoid.WalkSpeed = 30
+    else
+        humanoid.WalkSpeed = 16
+    end
+end)
+
+createToggle("High Jump", 90, function(state)
+    jumpEnabled = state
+    if state then
+        humanoid.JumpPower = 50
+    else
+        humanoid.JumpPower = 15
+    end
+end)
+
+createToggle("Aimbot", 130, function(state)
+    aimbot(state)
+end)
+
+createToggle("ESP/Wallhack", 170, function(state)
+    esp(state)
+end)
+
+createToggle("NoClip", 210, function(state)
+    noClip(state)
+end)
+
+-- Infinite Jump
+UserInputService.JumpRequest:Connect(function()
+    if infiniteJumpEnabled then
+        humanoid.Jump = true
+    end
+end)
+
+createToggle("Infinite Jump", 250, function(state)
+    infiniteJumpEnabled = state
+end)
+
+-- Character respawn handling
+player.CharacterAdded:Connect(function(newCharacter)
+    character = newCharacter
+    humanoid = character:WaitForChild("Humanoid")
+    
+    -- Reapply settings if needed
+    if speedEnabled then
+        humanoid.WalkSpeed = 30
+    end
+    if jumpEnabled then
+        humanoid.JumpPower = 50
+    end
+    if noClipEnabled then
+        noClip(true)
+    end
+end)
+
+print("Part 7 loaded: UI controls and final setup complete")
+print("Full script loaded successfully!")
